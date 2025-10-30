@@ -311,8 +311,36 @@
 
             <!-- Design Tab -->
             <div id="designTab" class="tab-content">
-                <h3 style="margin-bottom: 1.5rem;">Color Scheme</h3>
+                <!-- Logo Section -->
+                <h3 style="margin-bottom: 1rem;">Logo & Branding</h3>
+                <div class="form-group">
+                    <label for="logoUpload">Logo Image (Optional)</label>
+                    <input type="file" id="logoUpload" accept="image/*" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 5px;">
+                    <small style="display: block; color: var(--text-secondary); margin-top: 0.5rem;">Recommended: 200x60px, PNG or JPG</small>
+                </div>
+                
+                <!-- Header Styling -->
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label for="headerBlur">Header Blur Effect</label>
+                    <input type="range" id="headerBlur" min="0" max="20" value="10" style="width: 100%;">
+                    <small style="display: block; color: var(--text-secondary);">0 = No blur, 20 = Maximum blur</small>
+                </div>
+                
+                <!-- Colors -->
+                <h3 style="margin: 2rem 0 1rem 0;">Color Scheme</h3>
                 <div class="color-picker-group">
+                    <div class="color-item">
+                        <label for="colorPrimaryBg">Primary Background</label>
+                        <input type="color" id="colorPrimaryBg" class="color-input">
+                    </div>
+                    <div class="color-item">
+                        <label for="colorSecondaryBg">Secondary Background</label>
+                        <input type="color" id="colorSecondaryBg" class="color-input">
+                    </div>
+                    <div class="color-item">
+                        <label for="colorWarm">Accent Color</label>
+                        <input type="color" id="colorWarm" class="color-input">
+                    </div>
                     <div class="color-item">
                         <label for="colorDanger">Danger/Delete Color</label>
                         <input type="color" id="colorDanger" class="color-input">
@@ -322,9 +350,16 @@
                         <input type="color" id="colorSuccess" class="color-input">
                     </div>
                     <div class="color-item">
-                        <label for="colorWarm">Accent Color</label>
-                        <input type="color" id="colorWarm" class="color-input">
+                        <label for="colorTextPrimary">Text Primary</label>
+                        <input type="color" id="colorTextPrimary" class="color-input">
                     </div>
+                </div>
+                
+                <!-- Footer Styling -->
+                <h3 style="margin: 2rem 0 1rem 0;">Footer Customization</h3>
+                <div class="form-group">
+                    <label for="footerBg">Footer Background Color</label>
+                    <input type="color" id="footerBg" class="color-input" style="width: 60px; height: 40px;">
                 </div>
             </div>
 

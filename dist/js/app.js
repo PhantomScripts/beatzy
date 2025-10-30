@@ -455,14 +455,28 @@ async function saveAdminSettings(settings) {
             return false;
         }
         
-        const { error } = await supabase
-            .from('admin_settings')
-            .update(settings)
-            .eq('id', appData.id);
+        // If appData doesn't have id, this is a new record - insert instead
+        if (!appData.id) {
+            const { data, error } = await supabase
+                .from('admin_settings')
+                .insert([settings])
+                .select();
+            
+            if (error) throw error;
+            if (data && data[0]) {
+                appData = { ...appData, ...data[0] };
+            }
+        } else {
+            // Update existing record
+            const { error } = await supabase
+                .from('admin_settings')
+                .update(settings)
+                .eq('id', appData.id);
+            
+            if (error) throw error;
+            appData = { ...appData, ...settings };
+        }
         
-        if (error) throw error;
-        
-        appData = { ...appData, ...settings };
         applyTheme();
         showNotification('✅ Settings saved!', true);
         return true;
@@ -651,21 +665,32 @@ function closeAdmin(event) {
 }
 
 function populateAdminForm() {
-    if (appData.colors) {
-        document.getElementById('colorDanger').value = appData.colors.danger || '#c17b6b';
-        document.getElementById('colorSuccess').value = appData.colors.success || '#7ba98a';
-        document.getElementById('colorWarm').value = appData.colors.accentWarm || '#d4a574';
-    }
-    
+    // General Tab
     document.getElementById('platformName').value = appData.platform_name || '';
     document.getElementById('platformDesc').value = appData.platform_desc || '';
     document.getElementById('heroTitle').value = appData.hero_title || '';
     document.getElementById('heroDesc').value = appData.hero_desc || '';
     document.getElementById('sectionTitle').value = appData.section_title || '';
     document.getElementById('footerText').value = appData.footer_text || '';
+    
+    // Design Tab - Colors
+    if (appData.colors) {
+        document.getElementById('colorPrimaryBg').value = appData.colors.primaryBg || '#faf8f3';
+        document.getElementById('colorSecondaryBg').value = appData.colors.secondaryBg || '#f0ebe3';
+        document.getElementById('colorWarm').value = appData.colors.accentWarm || '#d4a574';
+        document.getElementById('colorDanger').value = appData.colors.danger || '#c17b6b';
+        document.getElementById('colorSuccess').value = appData.colors.success || '#7ba98a';
+        document.getElementById('colorTextPrimary').value = appData.colors.textPrimary || '#2a2520';
+    }
+    
+    // Design Tab - Other settings
+    document.getElementById('headerBlur').value = appData.header_blur || 10;
+    document.getElementById('footerBg').value = appData.footer_bg || '#2a2520';
 }
 
-function saveAdminForm() {
+async function saveAdminForm() {
+    const logoFile = document.getElementById('logoUpload').files[0];
+    
     const updates = {
         platform_name: document.getElementById('platformName').value,
         platform_desc: document.getElementById('platformDesc').value,
@@ -673,26 +698,73 @@ function saveAdminForm() {
         hero_desc: document.getElementById('heroDesc').value,
         section_title: document.getElementById('sectionTitle').value,
         footer_text: document.getElementById('footerText').value,
+        header_blur: parseInt(document.getElementById('headerBlur').value),
+        footer_bg: document.getElementById('footerBg').value,
         colors: {
             ...appData.colors,
+            primaryBg: document.getElementById('colorPrimaryBg').value,
+            secondaryBg: document.getElementById('colorSecondaryBg').value,
             danger: document.getElementById('colorDanger').value,
             success: document.getElementById('colorSuccess').value,
-            accentWarm: document.getElementById('colorWarm').value
+            accentWarm: document.getElementById('colorWarm').value,
+            textPrimary: document.getElementById('colorTextPrimary').value
         }
     };
     
-    saveAdminSettings(updates);
+    // Handle logo upload if file is selected
+    if (logoFile) {
+        try {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                updates.logo_data = e.target.result;
+                saveAdminSettings(updates);
+            };
+            reader.readAsDataURL(logoFile);
+        } catch (error) {
+            console.error('Error reading logo file:', error);
+            saveAdminSettings(updates);
+        }
+    } else {
+        await saveAdminSettings(updates);
+    }
 }
 
 function applyTheme() {
     if (!appData.colors) return;
     
     const colors = appData.colors;
+    
+    // Apply colors
     document.documentElement.style.setProperty('--danger', colors.danger || '#c17b6b');
     document.documentElement.style.setProperty('--success', colors.success || '#7ba98a');
     document.documentElement.style.setProperty('--accent-warm', colors.accentWarm || '#d4a574');
     document.documentElement.style.setProperty('--primary-bg', colors.primaryBg || '#faf8f3');
     document.documentElement.style.setProperty('--secondary-bg', colors.secondaryBg || '#f0ebe3');
+    document.documentElement.style.setProperty('--text-primary', colors.textPrimary || '#2a2520');
+    
+    // Apply header blur
+    const header = document.querySelector('header');
+    if (header) {
+        const blurValue = appData.header_blur || 10;
+        header.style.backdropFilter = `blur(${blurValue}px)`;
+    }
+    
+    // Apply footer background
+    const footer = document.querySelector('footer');
+    if (footer) {
+        footer.style.backgroundColor = appData.footer_bg || '#2a2520';
+    }
+    
+    // Apply logo
+    if (appData.logo_data) {
+        const logoIcon = document.querySelector('.logo-icon');
+        if (logoIcon) {
+            logoIcon.innerHTML = `<img src="${appData.logo_data}" style="height: 40px; width: auto; object-fit: contain;">`;
+            logoIcon.style.display = 'flex';
+            logoIcon.style.alignItems = 'center';
+            logoIcon.style.justifyContent = 'center';
+        }
+    }
     
     // Update UI text
     if (appData.platform_name) {
