@@ -763,6 +763,24 @@ function closeAdmin(event) {
     }
 }
 
+function updateHeaderBlur(value) {
+    const header = document.querySelector('header');
+    if (header) {
+        header.style.backdropFilter = `blur(${value}px)`;
+        appData.header_blur = parseInt(value);
+    }
+}
+
+function updateHeaderTransparency(value) {
+    const header = document.querySelector('header');
+    if (header) {
+        const opacity = value / 100;
+        const baseColor = 'rgba(250, 248, 243, ' + opacity + ')';
+        header.style.background = baseColor;
+        appData.header_transparency = parseInt(value);
+    }
+}
+
 function populateAdminForm() {
     // General Tab
     document.getElementById('platformName').value = appData.platform_name || '';
@@ -783,7 +801,8 @@ function populateAdminForm() {
     }
     
     // Design Tab - Other settings
-    document.getElementById('headerBlur').value = appData.header_blur || 10;
+    document.getElementById('headerBlur').value = appData.header_blur || 15;
+    document.getElementById('headerTransparency').value = appData.header_transparency || 30;
     document.getElementById('footerBg').value = appData.footer_bg || '#2a2520';
 }
 
@@ -811,7 +830,8 @@ async function saveAdminForm() {
         hero_desc: document.getElementById('heroDesc').value,
         section_title: document.getElementById('sectionTitle').value,
         footer_text: document.getElementById('footerText').value,
-        header_blur: parseInt(document.getElementById('headerBlur').value) || 10,
+        header_blur: parseInt(document.getElementById('headerBlur').value) || 15,
+        header_transparency: parseInt(document.getElementById('headerTransparency').value) || 30,
         footer_bg: document.getElementById('footerBg').value || '#2a2520',
         colors: newColors
     };
@@ -876,13 +896,16 @@ function applyTheme() {
     document.body.style.backgroundColor = colors.primaryBg || '#faf8f3';
     console.log(`✅ Body background: ${colors.primaryBg || '#faf8f3'}`);
     
-    // Apply header blur
+    // Apply header blur and transparency
     const header = document.querySelector('header');
     if (header) {
-        const blurValue = appData.header_blur || 10;
+        const blurValue = appData.header_blur || 15;
+        const transparencyPercent = appData.header_transparency || 30;
+        const opacity = transparencyPercent / 100;
+        
         header.style.backdropFilter = `blur(${blurValue}px)`;
-        header.style.backgroundColor = `rgba(250, 248, 243, ${1 - (blurValue / 30)})`;
-        console.log(`✅ Header blur applied: ${blurValue}px`);
+        header.style.backgroundColor = `rgba(250, 248, 243, ${opacity})`;
+        console.log(`✅ Header blur applied: ${blurValue}px, transparency: ${transparencyPercent}%`);
     } else {
         console.warn('⚠️ Header element not found');
     }
