@@ -66,13 +66,12 @@ header.scrolled {
     width: 45px;
     height: 45px;
     border-radius: 50%;
-    background: var(--accent-warm);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
     font-weight: bold;
     font-size: 1.2rem;
+    object-fit: contain;
 }
 
 .logo-text {
@@ -102,7 +101,7 @@ nav a:hover {
 
 /* ===== BUTTONS ===== */
 .btn-admin {
-    background: var(--accent-warm);
+    background: #000000;
     color: white;
     border: none;
     padding: 0.6rem 1.4rem;
@@ -114,12 +113,12 @@ nav a:hover {
 }
 
 .btn-admin:hover {
-    background: var(--accent-dark);
+    background: #1a1a1a;
     transform: translateY(-2px);
 }
 
 .btn-primary {
-    background: var(--accent-warm);
+    background: #000000;
     color: white;
     border: none;
     padding: 0.9rem 2.2rem;
@@ -131,14 +130,14 @@ nav a:hover {
 }
 
 .btn-primary:hover {
-    background: var(--accent-dark);
+    background: #1a1a1a;
     transform: translateY(-3px);
 }
 
 .btn-secondary {
     background: transparent;
-    color: var(--accent-warm);
-    border: 2px solid var(--accent-warm);
+    color: #000000;
+    border: 2px solid #000000;
     padding: 0.8rem 2.2rem;
     border-radius: 30px;
     font-size: 0.95rem;
@@ -148,30 +147,30 @@ nav a:hover {
 }
 
 .btn-secondary:hover {
-    background: rgba(212, 165, 116, 0.1);
+    background: rgba(0, 0, 0, 0.05);
     transform: translateY(-3px);
 }
 
 .btn-small {
     flex: 1;
     padding: 0.5rem;
-    border: 1px solid var(--border);
+    border: 1px solid #000000;
     background: white;
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #000000;
     transition: all 0.3s;
 }
 
 .btn-small:hover {
-    background: var(--secondary-bg);
-    border-color: var(--accent-warm);
+    background: #f0f0f0;
+    border-color: #000000;
 }
 
 .btn-delete {
-    background: var(--danger);
+    background: #c17b6b;
     color: white;
     border: none;
 }
@@ -181,18 +180,18 @@ nav a:hover {
 }
 
 .btn-edit {
-    background: var(--accent-warm);
+    background: #000000;
     color: white;
     border: none;
 }
 
 .btn-edit:hover {
-    background: var(--accent-dark);
+    background: #1a1a1a;
 }
 
 .btn-save {
     flex: 1;
-    background: var(--accent-warm);
+    background: #000000;
     color: white;
     border: none;
     padding: 0.8rem;
@@ -203,7 +202,7 @@ nav a:hover {
 }
 
 .btn-save:hover {
-    background: var(--accent-dark);
+    background: #1a1a1a;
 }
 
 .btn-reset {
