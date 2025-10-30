@@ -246,10 +246,40 @@ async function loadTracks() {
 
 async function uploadTrack(file, coverFile, metadata) {
     try {
+        console.log('🎵 [UPLOAD] Starting upload process...');
+        
+        // DEBUG: Check authentication
         if (!currentUser) {
+            console.error('❌ [UPLOAD] No currentUser found');
             showNotification('❌ You must be logged in to upload', false);
             return false;
         }
+        
+        console.log('✅ [UPLOAD] CurrentUser authenticated:', {
+            id: currentUser.id,
+            email: currentUser.email
+        });
+        
+        // DEBUG: Verify user exists in users table
+        const { data: userRecord, error: userCheckError } = await supabase
+            .from('users')
+            .select('id, is_admin')
+            .eq('id', currentUser.id)
+            .single();
+        
+        if (userCheckError) {
+            console.warn('⚠️ [UPLOAD] User record check error:', userCheckError);
+        } else {
+            console.log('✅ [UPLOAD] User record found:', userRecord);
+        }
+        
+        // DEBUG: Get current session to verify auth token
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log('🔑 [UPLOAD] Session info:', {
+            hasSession: !!session,
+            sessionError: sessionError,
+            user: session?.user?.id
+        });
         
         showNotification('📤 Uploading track...', false);
         
@@ -258,6 +288,8 @@ async function uploadTrack(file, coverFile, metadata) {
         const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
         const filePath = `${currentUser.id}/${fileName}`;
         
+        console.log('📁 [UPLOAD] File path:', filePath);
+        
         const { error: uploadError } = await supabase.storage
             .from('audio')
             .upload(filePath, file, {
@@ -265,7 +297,12 @@ async function uploadTrack(file, coverFile, metadata) {
                 upsert: false
             });
         
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+            console.error('❌ [UPLOAD] Storage upload error:', uploadError);
+            throw uploadError;
+        }
+        
+        console.log('✅ [UPLOAD] Audio file uploaded to storage');
         
         // Upload cover image if provided
         let coverData = null;
@@ -277,34 +314,56 @@ async function uploadTrack(file, coverFile, metadata) {
                     reader.onerror = reject;
                     reader.readAsDataURL(coverFile);
                 });
+                console.log('✅ [UPLOAD] Cover image processed');
             } catch (coverError) {
-                console.warn('Could not process cover image:', coverError);
+                console.warn('⚠️ [UPLOAD] Could not process cover image:', coverError);
             }
         }
         
         // Create track record
+        const trackData = {
+            name: metadata.name,
+            artist: metadata.artist,
+            genre: metadata.genre,
+            uploaded_by: currentUser.id,
+            plays: 0,
+            duration: 0,
+            cover_data: coverData || null
+        };
+        
+        console.log('📝 [UPLOAD] Track data to insert:', trackData);
+        
         const { data: track, error: dbError } = await supabase
             .from('tracks')
-            .insert([{
-                name: metadata.name,
-                artist: metadata.artist,
-                genre: metadata.genre,
-                uploaded_by: currentUser.id,
-                plays: 0,
-                duration: 0,
-                cover_data: coverData || null
-            }])
+            .insert([trackData])
             .select()
             .single();
         
-        if (dbError) throw dbError;
+        if (dbError) {
+            console.error('❌ [UPLOAD] Database insert error:', {
+                message: dbError.message,
+                code: dbError.code,
+                details: dbError.details,
+                hint: dbError.hint,
+                fullError: dbError
+            });
+            throw dbError;
+        }
+        
+        console.log('✅ [UPLOAD] Track record created:', track);
         
         showNotification('✅ Track uploaded successfully!', true);
         audioCache.clear();
         await loadTracks();
         return true;
     } catch (error) {
-        console.error('❌ Error uploading track:', error);
+        console.error('❌ [UPLOAD] Error uploading track:', error);
+        console.error('❌ [UPLOAD] Full error object:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
         showNotification(`Upload failed: ${error.message}`, false);
         return false;
     }
