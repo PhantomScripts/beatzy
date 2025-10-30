@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resonance - Discover Independent Musicians</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- ===== HEADER ===== -->
+    <header>
+        <div class="header-container">
+            <div class="logo-section">
+                <img src="images/logo.png" alt="Logo" class="logo-icon">
+                <div class="logo-text" id="logoText">Resonance</div>
+            </div>
+            <nav>
+                <a href="#music">Music</a>
+                <a href="#stats">Stats</a>
+                <a href="#footer">Contact</a>
+                <button class="btn-admin" id="authBtn" onclick="toggleAuthPanel()">Login / Sign Up</button>
+                <button class="btn-admin" id="userBtn" onclick="openUserDashboard()" style="display: none;">👤 My Music</button>
+                <button class="btn-admin" id="adminBtn" onclick="openAdmin()" style="display: none;">⚙️ Admin</button>
+                <button class="btn-admin" id="logoutBtn" onclick="logout()" style="display: none; background: var(--danger);">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main>
+        <!-- HERO SECTION -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1 id="heroTitle">Discover Unknown Artists</h1>
+                <p id="heroDesc">Share your music with the world. Resonance is a platform for independent musicians to amplify their voice and connect with listeners worldwide.</p>
+                <div class="cta-buttons">
+                    <button class="btn-primary" onclick="document.getElementById('musicSection').scrollIntoView({behavior: 'smooth'})">Explore Music</button>
+                    <button class="btn-secondary" onclick="handleShareMusic()">Share Your Music</button>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="visual-placeholder" id="heroPlaceholder">
+                    <span>🎵</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- UPLOAD SECTION (for logged-in users) -->
+        <section id="uploadSection" class="section" style="display: none;">
+            <div class="section-title">Upload Your Track</div>
+            <form id="uploadForm" style="max-width: 600px; margin: 0 auto;">
+                <div class="form-group">
+                    <label for="trackName">Track Name *</label>
+                    <input type="text" id="trackName" required placeholder="My Amazing Song">
+                </div>
+                <div class="form-group">
+                    <label for="trackArtist">Artist Name *</label>
+                    <input type="text" id="trackArtist" required placeholder="Your Name">
+                </div>
+                <div class="form-group">
+                    <label for="trackGenre">Genre</label>
+                    <input type="text" id="trackGenre" placeholder="e.g., Indie, Pop, Rock">
+                </div>
+                <div class="form-group">
+                    <label for="trackCover">Album Art / Cover Image</label>
+                    <input type="file" id="trackCover" accept="image/*" placeholder="Upload cover image">
+                </div>
+                <div class="form-group">
+                    <label for="trackFile">Audio File (.mp3, .wav) *</label>
+                    <input type="file" id="trackFile" accept="audio/*" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn-primary" style="width: 100%;">📤 Upload Track</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- MUSIC SECTION -->
+        <section id="musicSection" class="section">
+            <div class="section-title" id="sectionTitle">Featured Tracks</div>
+            <div class="music-grid" id="musicContainer">
+                <p style="text-align: center; color: var(--text-secondary);">Loading tracks...</p>
+            </div>
+        </section>
+
+        <!-- STATS SECTION -->
+        <section id="stats" class="section">
+            <div class="section-title">Platform Stats</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalTracks">0</div>
+                    <div class="stat-label">Total Tracks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPlays">0</div>
+                    <div class="stat-label">Total Plays</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label" style="font-size: 0.9rem;">Most Played Track</div>
+                    <div style="font-size: 1rem; color: var(--text-primary); margin-top: 1rem;" id="mostPlayed">-</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===== AUTHENTICATION PANEL ===== -->
+    <div id="authPanel" style="display: none; position: fixed; top: 80px; right: 20px; background: white; border: 1px solid var(--border); border-radius: 15px; padding: 2rem; width: 300px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); z-index: 1500;">
+        <div style="text-align: right; margin-bottom: 1rem;">
+            <button class="btn-close" onclick="closeAuthPanel()" style="padding: 0;">×</button>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="signInForm" style="display: block;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Sign In</h3>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="signInEmail" required placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signInPassword" required>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 1rem;">Sign In</button>
+            <p style="text-align: center; font-size: 0.9rem;">
+                No account? <a href="#" onclick="switchToSignUp(event)" style="color: var(--accent-warm); text-decoration: none;">Sign Up</a>
+            </p>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="signUpForm" style="display: none;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Create Account</h3>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="signUpUsername" required placeholder="your_username">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="signUpEmail" required placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signUpPassword" required>
+            </div>
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" id="signUpPasswordConfirm" required>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 1rem;">Create Account</button>
+            <p style="text-align: center; font-size: 0.9rem;">
+                Have an account? <a href="#" onclick="switchToSignIn(event)" style="color: var(--accent-warm); text-decoration: none;">Sign In</a>
+            </p>
+        </form>
+    </div>
+
+    <!-- ===== MY MUSIC DASHBOARD ===== -->
+    <div id="dashboardOverlay" class="modal-overlay" style="display: none;" onclick="closeDashboard(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h1>My Music</h1>
+                <button class="btn-close" onclick="closeDashboard()">×</button>
+            </div>
+            
+            <div id="userWelcome" style="padding: 1.5rem; background: var(--accent-light); border-radius: 10px; margin-bottom: 2rem; text-align: center;">
+                <p style="margin: 0; color: var(--text-primary); font-weight: bold;">Welcome, <span id="userEmail"></span>!</p>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Your Tracks</h3>
+                <div id="userTracks" style="display: grid; gap: 1rem;">
+                    <p style="text-align: center; color: var(--text-secondary);">Loading your tracks...</p>
+                </div>
+            </div>
+
+            <div style="text-align: center; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <button class="btn-primary" onclick="document.getElementById('uploadSection').scrollIntoView({behavior: 'smooth'}); closeDashboard();">📤 Upload New Track</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SUPPORT US MODAL ===== -->
+    <div id="supportModal" class="modal-overlay" style="display: none;" onclick="closeModal('supportModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h1>Support Us</h1>
+                <button class="btn-close" onclick="closeModal('supportModal')">×</button>
+            </div>
+            <div style="padding: 2rem;">
+                <p style="margin-bottom: 1rem;">Help us keep Resonance free and growing! Your support enables us to:</p>
+                <ul style="margin-bottom: 2rem; padding-left: 1.5rem;">
+                    <li>Maintain and upgrade our infrastructure</li>
+                    <li>Develop new features</li>
+                    <li>Support independent artists worldwide</li>
+                </ul>
+                <div style="background: var(--accent-light); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem;">
+                    <p style="margin: 0 0 1rem 0;"><strong>Become a Supporter:</strong></p>
+                    <button class="btn-primary" style="width: 100%; margin-bottom: 0.5rem;">Donate</button>
+                </div>
+                <p style="text-align: center; font-size: 0.9rem; color: var(--text-secondary);">Every contribution makes a difference! ❤️</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== REPORT ISSUE MODAL ===== -->
+    <div id="issueModal" class="modal-overlay" style="display: none;" onclick="closeModal('issueModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h1>Report an Issue</h1>
+                <button class="btn-close" onclick="closeModal('issueModal')">×</button>
+            </div>
+            <form id="issueForm" style="padding: 2rem;">
+                <div class="form-group">
+                    <label for="issueName">Your Name</label>
+                    <input type="text" id="issueName" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label for="issueEmail">Your Email *</label>
+                    <input type="email" id="issueEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="issueType">Issue Type *</label>
+                    <select id="issueType" required style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 5px; font-family: inherit;">
+                        <option value="">Select an issue type...</option>
+                        <option value="bug">🐛 Bug Report</option>
+                        <option value="feature">💡 Feature Request</option>
+                        <option value="performance">⚡ Performance Issue</option>
+                        <option value="other">📝 Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="issueDescription">Description *</label>
+                    <textarea id="issueDescription" required placeholder="Please describe the issue in detail..." style="height: 120px;"></textarea>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">Submit Report</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== CONTACT US MODAL ===== -->
+    <div id="contactModal" class="modal-overlay" style="display: none;" onclick="closeModal('contactModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h1>Contact Us</h1>
+                <button class="btn-close" onclick="closeModal('contactModal')">×</button>
+            </div>
+            <div style="padding: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Get in Touch</h3>
+                <p style="margin-bottom: 2rem; color: var(--text-secondary);">Have questions? Want to collaborate? Reach out to us!</p>
+                
+                <div style="background: var(--accent-light); padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                    <p style="margin-bottom: 0.5rem;"><strong>📧 Email:</strong></p>
+                    <p style="margin: 0; color: var(--accent-warm);">hello@resonance.music</p>
+                </div>
+
+                <div style="background: var(--accent-light); padding: 1.5rem; border-radius: 10px;">
+                    <p style="margin-bottom: 0.5rem;"><strong>🌐 Social Media:</strong></p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <a href="#" style="color: var(--accent-warm); text-decoration: none;">Twitter</a>
+                        <a href="#" style="color: var(--accent-warm); text-decoration: none;">Instagram</a>
+                        <a href="#" style="color: var(--accent-warm); text-decoration: none;">Discord</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ADMIN PANEL ===== -->
+    <div id="adminOverlay" class="admin-overlay" style="display: none;" onclick="closeAdmin(event)">
+        <div class="admin-modal" onclick="event.stopPropagation()">
+            <div class="admin-header">
+                <h1>Admin Settings</h1>
+                <button class="btn-close" onclick="closeAdmin()">×</button>
+            </div>
+
+            <div class="admin-tabs">
+                <button class="tab-btn active" onclick="switchAdminTab('general')">General</button>
+                <button class="tab-btn" onclick="switchAdminTab('design')">Design</button>
+            </div>
+
+            <!-- General Tab -->
+            <div id="generalTab" class="tab-content active">
+                <div class="form-group">
+                    <label>Platform Name</label>
+                    <input type="text" id="platformName" placeholder="Resonance">
+                </div>
+                <div class="form-group">
+                    <label>Platform Description</label>
+                    <textarea id="platformDesc" placeholder="Platform description..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Hero Title</label>
+                    <input type="text" id="heroTitle" placeholder="Discover Unknown Artists">
+                </div>
+                <div class="form-group">
+                    <label>Hero Description</label>
+                    <textarea id="heroDesc" placeholder="Hero section description..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Section Title</label>
+                    <input type="text" id="sectionTitle" placeholder="Featured Tracks">
+                </div>
+                <div class="form-group">
+                    <label>Footer Text</label>
+                    <input type="text" id="footerText" placeholder="Footer copyright text...">
+                </div>
+            </div>
+
+            <!-- Design Tab -->
+            <div id="designTab" class="tab-content">
+                <!-- Logo Section -->
+                <h3 style="margin-bottom: 1rem;">Logo & Branding</h3>
+                <div class="form-group">
+                    <label for="logoUpload">Logo Image (Optional)</label>
+                    <input type="file" id="logoUpload" accept="image/*" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 5px;">
+                    <small style="display: block; color: var(--text-secondary); margin-top: 0.5rem;">Recommended: 200x60px, PNG or JPG</small>
+                </div>
+                
+                <!-- Header Styling -->
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label for="headerBlur">Header Blur Effect</label>
+                    <input type="range" id="headerBlur" min="0" max="20" value="10" style="width: 100%;">
+                    <small style="display: block; color: var(--text-secondary);">0 = No blur, 20 = Maximum blur</small>
+                </div>
+                
+                <!-- Colors -->
+                <h3 style="margin: 2rem 0 1rem 0;">Color Scheme</h3>
+                <div class="color-picker-group">
+                    <div class="color-item">
+                        <label for="colorPrimaryBg">Primary Background</label>
+                        <input type="color" id="colorPrimaryBg" class="color-input">
+                    </div>
+                    <div class="color-item">
+                        <label for="colorSecondaryBg">Secondary Background</label>
+                        <input type="color" id="colorSecondaryBg" class="color-input">
+                    </div>
+                    <div class="color-item">
+                        <label for="colorWarm">Accent Color</label>
+                        <input type="color" id="colorWarm" class="color-input">
+                    </div>
+                    <div class="color-item">
+                        <label for="colorDanger">Danger/Delete Color</label>
+                        <input type="color" id="colorDanger" class="color-input">
+                    </div>
+                    <div class="color-item">
+                        <label for="colorSuccess">Success Color</label>
+                        <input type="color" id="colorSuccess" class="color-input">
+                    </div>
+                    <div class="color-item">
+                        <label for="colorTextPrimary">Text Primary</label>
+                        <input type="color" id="colorTextPrimary" class="color-input">
+                    </div>
+                </div>
+                
+                <!-- Footer Styling -->
+                <h3 style="margin: 2rem 0 1rem 0;">Footer Customization</h3>
+                <div class="form-group">
+                    <label for="footerBg">Footer Background Color</label>
+                    <input type="color" id="footerBg" class="color-input" style="width: 60px; height: 40px;">
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button class="btn-save" onclick="saveAdminForm()">💾 Save Changes</button>
+                <button class="btn-reset" onclick="closeAdmin()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer id="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>About Resonance</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">A platform for independent musicians to share and discover amazing music.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="#music">Browse Music</a>
+                <a href="#stats">Statistics</a>
+                <a href="#" onclick="handleShareMusic(); return false;">Upload Music</a>
+            </div>
+            <div class="footer-section">
+                <h4>Community</h4>
+                <a href="#" onclick="openModal('supportModal'); return false;">Support Us</a>
+                <a href="#" onclick="openModal('issueModal'); return false;">Report an Issue</a>
+                <a href="#" onclick="openModal('contactModal'); return false;">Contact Us</a>
+            </div>
+        </div>
+        <div class="footer-bottom" id="footerText">
+            © 2024 Resonance. All rights reserved. Amplifying Independent Music.
+        </div>
+    </footer>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="js/app.js"></script>
+
+    <!-- Inline functions for UI interactions -->
+    <script>
+        function switchAdminTab(tabName) {
+            document.getElementById('generalTab').classList.remove('active');
+            document.getElementById('designTab').classList.remove('active');
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function handleShareMusic() {
+            if (currentUser) {
+                document.getElementById('uploadSection').scrollIntoView({behavior: 'smooth'});
+            } else {
+                toggleAuthPanel();
+            }
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId, event) {
+            if (event && event.target.id !== modalId) return;
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function closeDashboard(event) {
+            if (event && event.target.id !== 'dashboardOverlay') return;
+            document.getElementById('dashboardOverlay').style.display = 'none';
+        }
+
+        function switchToSignIn(e) {
+            e.preventDefault();
+            document.getElementById('signInForm').style.display = 'block';
+            document.getElementById('signUpForm').style.display = 'none';
+        }
+
+        function switchToSignUp(e) {
+            e.preventDefault();
+            document.getElementById('signInForm').style.display = 'none';
+            document.getElementById('signUpForm').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
