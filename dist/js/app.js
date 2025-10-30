@@ -406,22 +406,31 @@ async function getAudioUrl(trackId) {
 // ===== ADMIN SETTINGS =====
 async function loadAdminSettings() {
     try {
+        console.log('📥 Loading admin settings from database...');
+        
         const { data, error } = await supabase
             .from('admin_settings')
             .select('*')
             .single();
         
-        if (error && error.code !== 'PGRST116') throw error;
+        if (error && error.code !== 'PGRST116') {
+            console.error('❌ Database error:', error);
+            throw error;
+        }
         
         if (data) {
+            console.log('✅ Admin settings loaded:', data);
+            console.log('🎨 Colors from DB:', data.colors);
             appData = { ...appData, ...data };
+            console.log('📊 Updated appData:', appData);
         } else {
+            console.log('⚠️ No admin settings found, creating default...');
             await createDefaultAdminSettings();
         }
         
         applyTheme();
     } catch (error) {
-        console.warn('Error loading admin settings:', error);
+        console.warn('⚠️ Error loading admin settings:', error);
         applyTheme();
     }
 }
@@ -459,6 +468,7 @@ async function saveAdminSettings(settings) {
         }
         
         console.log('💾 Saving admin settings...', settings);
+        console.log('🔍 Current appData.id:', appData.id);
         
         // If appData doesn't have id, this is a new record - insert instead
         if (!appData.id) {
@@ -468,32 +478,43 @@ async function saveAdminSettings(settings) {
                 .insert([settings])
                 .select();
             
-            if (error) throw error;
+            if (error) {
+                console.error('❌ INSERT Error:', error);
+                throw error;
+            }
             if (data && data[0]) {
                 appData = { ...appData, ...data[0] };
                 console.log('✅ New record created:', data[0]);
+                console.log('🎨 Colors in DB:', data[0].colors);
             }
         } else {
             // Update existing record
-            console.log('🔄 Updating existing admin_settings record...');
+            console.log('🔄 Updating existing admin_settings record with ID:', appData.id);
+            console.log('📤 Sending to DB:', JSON.stringify(settings));
+            
             const { data, error } = await supabase
                 .from('admin_settings')
                 .update(settings)
                 .eq('id', appData.id)
                 .select();
             
-            if (error) throw error;
+            if (error) {
+                console.error('❌ UPDATE Error:', error);
+                throw error;
+            }
             
             // Use returned data if available
             if (data && data[0]) {
                 appData = { ...appData, ...data[0] };
                 console.log('✅ Record updated from DB:', data[0]);
+                console.log('🎨 Colors in DB response:', data[0].colors);
             } else {
                 appData = { ...appData, ...settings };
                 console.log('✅ Record updated (local):', appData);
             }
         }
         
+        console.log('📥 Loading fresh settings from database...');
         // Reload settings to ensure we have latest data
         await loadAdminSettings();
         
@@ -710,6 +731,20 @@ function populateAdminForm() {
 async function saveAdminForm() {
     const logoFile = document.getElementById('logoUpload').files[0];
     
+    console.log('📝 Building form updates...');
+    
+    // Build colors object with explicit values from form
+    const newColors = {
+        primaryBg: document.getElementById('colorPrimaryBg').value || '#faf8f3',
+        secondaryBg: document.getElementById('colorSecondaryBg').value || '#f0ebe3',
+        danger: document.getElementById('colorDanger').value || '#c17b6b',
+        success: document.getElementById('colorSuccess').value || '#7ba98a',
+        accentWarm: document.getElementById('colorWarm').value || '#d4a574',
+        textPrimary: document.getElementById('colorTextPrimary').value || '#2a2520'
+    };
+    
+    console.log('🎨 New colors from form:', newColors);
+    
     const updates = {
         platform_name: document.getElementById('platformName').value,
         platform_desc: document.getElementById('platformDesc').value,
@@ -719,16 +754,10 @@ async function saveAdminForm() {
         footer_text: document.getElementById('footerText').value,
         header_blur: parseInt(document.getElementById('headerBlur').value) || 10,
         footer_bg: document.getElementById('footerBg').value || '#2a2520',
-        colors: {
-            ...appData.colors,
-            primaryBg: document.getElementById('colorPrimaryBg').value || '#faf8f3',
-            secondaryBg: document.getElementById('colorSecondaryBg').value || '#f0ebe3',
-            danger: document.getElementById('colorDanger').value || '#c17b6b',
-            success: document.getElementById('colorSuccess').value || '#7ba98a',
-            accentWarm: document.getElementById('colorWarm').value || '#d4a574',
-            textPrimary: document.getElementById('colorTextPrimary').value || '#2a2520'
-        }
+        colors: newColors
     };
+    
+    console.log('📦 Full updates object:', updates);
     
     // Handle logo upload if file is selected
     if (logoFile) {
@@ -749,7 +778,11 @@ async function saveAdminForm() {
 }
 
 function applyTheme() {
-    console.log('🎨 Applying theme...', appData);
+    console.log('🎨 Applying theme...');
+    console.log('📊 appData:', appData);
+    console.log('🎨 appData.colors:', appData.colors);
+    console.log('🌊 appData.header_blur:', appData.header_blur);
+    console.log('🦶 appData.footer_bg:', appData.footer_bg);
     
     // Set default colors if not present
     const colors = appData.colors || {
@@ -761,18 +794,28 @@ function applyTheme() {
         textPrimary: '#2a2520'
     };
     
+    console.log('🎨 Colors to apply:', colors);
+    
     // Apply colors to CSS custom properties
-    document.documentElement.style.setProperty('--danger', colors.danger || '#c17b6b');
-    document.documentElement.style.setProperty('--success', colors.success || '#7ba98a');
-    document.documentElement.style.setProperty('--accent-warm', colors.accentWarm || '#d4a574');
-    document.documentElement.style.setProperty('--primary-bg', colors.primaryBg || '#faf8f3');
-    document.documentElement.style.setProperty('--secondary-bg', colors.secondaryBg || '#f0ebe3');
-    document.documentElement.style.setProperty('--text-primary', colors.textPrimary || '#2a2520');
+    const cssVars = {
+        '--danger': colors.danger || '#c17b6b',
+        '--success': colors.success || '#7ba98a',
+        '--accent-warm': colors.accentWarm || '#d4a574',
+        '--primary-bg': colors.primaryBg || '#faf8f3',
+        '--secondary-bg': colors.secondaryBg || '#f0ebe3',
+        '--text-primary': colors.textPrimary || '#2a2520'
+    };
+    
+    Object.entries(cssVars).forEach(([varName, value]) => {
+        document.documentElement.style.setProperty(varName, value);
+        console.log(`✅ Set ${varName} = ${value}`);
+    });
     
     console.log('✅ CSS variables applied');
     
     // Force body background update
     document.body.style.backgroundColor = colors.primaryBg || '#faf8f3';
+    console.log(`✅ Body background: ${colors.primaryBg || '#faf8f3'}`);
     
     // Apply header blur
     const header = document.querySelector('header');
@@ -781,13 +824,17 @@ function applyTheme() {
         header.style.backdropFilter = `blur(${blurValue}px)`;
         header.style.backgroundColor = `rgba(250, 248, 243, ${1 - (blurValue / 30)})`;
         console.log(`✅ Header blur applied: ${blurValue}px`);
+    } else {
+        console.warn('⚠️ Header element not found');
     }
     
     // Apply footer background
     const footer = document.querySelector('footer');
     if (footer) {
         footer.style.backgroundColor = appData.footer_bg || '#2a2520';
-        console.log(`✅ Footer background applied: ${appData.footer_bg}`);
+        console.log(`✅ Footer background applied: ${appData.footer_bg || '#2a2520'}`);
+    } else {
+        console.warn('⚠️ Footer element not found');
     }
     
     // Apply logo
